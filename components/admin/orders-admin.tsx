@@ -13,6 +13,12 @@ const errorMessage = (data: unknown, fallback: string): string =>
     ? (data as { error: string }).error
     : fallback;
 
+const formatDate = (iso: string): string => {
+  const [date, time] = iso.split("T");
+  const [year, month, day] = date.split("-");
+  return `${day}.${month}.${year} ${time.slice(0, 5)}`;
+};
+
 export function OrdersAdmin({ orders }: { orders: Order[] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -59,12 +65,25 @@ export function OrdersAdmin({ orders }: { orders: Order[] }) {
           <tbody>
             {orders.map((order) => (
               <tr key={order.id}>
-                <td className="mono">{order.id.slice(0, 8)}</td>
+                <td>
+                  <div className="mono">{order.id.slice(0, 8)}</div>
+                  <div className="muted">{formatDate(order.createdAt)}</div>
+                </td>
                 <td>
                   <div>{order.customer.name}</div>
                   <div className="muted">{order.customer.email}</div>
                 </td>
-                <td>{order.items.reduce((n, item) => n + item.quantity, 0)}</td>
+                <td className="order-items">
+                  {order.items.map((item) => (
+                    <div key={item.productId} className="order-item">
+                      <div className="order-item-line">
+                        <span>{item.quantity} × {item.productName}</span>
+                        <span>{formatPrice(item.subtotal)}</span>
+                      </div>
+                      <div className="muted order-item-unit">{formatPrice(item.unitPrice)} each</div>
+                    </div>
+                  ))}
+                </td>
                 <td>{formatPrice(order.total)}</td>
                 <td>
                   <select value={order.status} onChange={(e) => changeStatus(order, e.target.value as OrderStatus)}>

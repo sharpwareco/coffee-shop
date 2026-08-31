@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AdminNav } from "./admin-nav";
 import { formatPrice } from "@/lib/format";
@@ -38,8 +38,17 @@ export function ProductsAdmin({ products }: { products: Product[] }) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const cardRef = useRef<HTMLElement | null>(null);
+  const nameRef = useRef<HTMLInputElement | null>(null);
 
   const editing = Boolean(draft.id);
+
+  useEffect(() => {
+    if (draft.id) {
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      nameRef.current?.focus({ preventScroll: true });
+    }
+  }, [draft.id]);
 
   function startCreate() {
     setDraft(emptyDraft);
@@ -118,13 +127,13 @@ export function ProductsAdmin({ products }: { products: Product[] }) {
       <AdminNav />
       <h1>Products</h1>
 
-      <section className="admin-card">
+      <section className="admin-card" ref={cardRef}>
         <h2>{editing ? `Edit ${draft.name}` : "New product"}</h2>
         <form onSubmit={handleSubmit} className="checkout-form">
           <div className="field-row">
             <label>
               Name
-              <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
+              <input ref={nameRef} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
             </label>
             <label>
               Price (TRY)
