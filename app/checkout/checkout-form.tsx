@@ -7,11 +7,35 @@ import { useCart, type CartItem } from "@/components/cart-context";
 import { formatPrice } from "@/lib/format";
 import type { Product } from "@/types/domain";
 
+const formatExpiry = (raw: string): string => {
+  const digits = raw.replace(/\D/g, "").slice(0, 4);
+  if (digits.length === 0) return "";
+
+  const hadSlash = raw.includes("/");
+  const singleDigitMonth = digits[0] >= "2" && digits[0] <= "9";
+
+  if (digits.length === 1) {
+    return hadSlash ? `0${digits}/` : digits;
+  }
+
+  if (singleDigitMonth) {
+    return `0${digits[0]}/${digits.slice(1, 3)}`;
+  }
+
+  const month = digits.slice(0, 2);
+  const year = digits.slice(2, 4);
+  if (digits.length === 2) {
+    return hadSlash ? `${month}/` : month;
+  }
+  return `${month}/${year}`;
+};
+
 export function CheckoutForm({ products }: { products: Product[] }) {
   const router = useRouter();
   const { items, clear } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expiry, setExpiry] = useState("");
 
   const rows = items
     .map((item) => ({ item, product: products.find((p) => p.id === item.productId) }))
@@ -32,7 +56,7 @@ export function CheckoutForm({ products }: { products: Product[] }) {
         phone: form.get("phone"),
         address: form.get("address"),
       },
-      items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+      items: rows.map(({ item }) => ({ productId: item.productId, quantity: item.quantity })),
       card: {
         number: form.get("cardNumber"),
         expiry: form.get("expiry"),
@@ -91,7 +115,7 @@ export function CheckoutForm({ products }: { products: Product[] }) {
             <p className="muted">Demo checkout — no real card is charged.</p>
             <label>Card number<input name="cardNumber" inputMode="numeric" placeholder="4242 4242 4242 4242" required /></label>
             <div className="field-row">
-              <label>Expiry<input name="expiry" placeholder="MM/YY" required /></label>
+              <label>Expiry<input name="expiry" placeholder="MM/YY" inputMode="numeric" value={expiry} onChange={(e) => setExpiry(formatExpiry(e.target.value))} required /></label>
               <label>CVC<input name="cvc" inputMode="numeric" placeholder="123" required /></label>
             </div>
           </fieldset>

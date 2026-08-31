@@ -7,7 +7,7 @@ import { formatPrice } from "@/lib/format";
 import type { Product } from "@/types/domain";
 
 export function CartView({ products }: { products: Product[] }) {
-  const { items, setQuantity, removeItem, clear } = useCart();
+  const { items, setQuantity, removeItem } = useCart();
 
   const rows = items
     .map((item) => ({ item, product: products.find((p) => p.id === item.productId) }))
@@ -55,7 +55,7 @@ export function CartView({ products }: { products: Product[] }) {
             <strong>{formatPrice(total)}</strong>
           </div>
           <Link href="/checkout" className="button button-block">Checkout</Link>
-          <button type="button" className="button-secondary button-block" onClick={clear}>Clear cart</button>
+          <Link href="/" className="button-secondary button-block">Continue shopping</Link>
         </aside>
       </div>
     </main>

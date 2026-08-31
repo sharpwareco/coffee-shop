@@ -2,21 +2,6 @@ import { NextResponse } from "next/server";
 import { createOrder, getProduct } from "@/lib/store";
 import type { OrderItem } from "@/types/domain";
 
-const luhnValid = (digits: string): boolean => {
-  let sum = 0;
-  let double = false;
-  for (let i = digits.length - 1; i >= 0; i--) {
-    let d = digits.charCodeAt(i) - 48;
-    if (double) {
-      d *= 2;
-      if (d > 9) d -= 9;
-    }
-    sum += d;
-    double = !double;
-  }
-  return sum % 10 === 0;
-};
-
 const badRequest = (error: string) => NextResponse.json({ error }, { status: 400 });
 
 export async function POST(request: Request) {
@@ -63,11 +48,11 @@ export async function POST(request: Request) {
   }
 
   const k = card as Record<string, unknown>;
-  const number = typeof k.number === "string" ? k.number.replace(/[\s-]/g, "") : "";
+  const number = typeof k.number === "string" ? k.number.replace(/\D/g, "") : "";
   const expiry = typeof k.expiry === "string" ? k.expiry.trim() : "";
   const cvc = typeof k.cvc === "string" ? k.cvc.trim() : "";
 
-  if (!/^\d{13,19}$/.test(number) || !luhnValid(number)) return badRequest("Invalid card number");
+  if (!/^\d{16}$/.test(number)) return badRequest("Invalid card number");
   if (!/^\d{3,4}$/.test(cvc)) return badRequest("Invalid CVC");
 
   const expiryMatch = /^(\d{2})\/(\d{2})$/.exec(expiry);
