@@ -2,12 +2,15 @@
   "name": "midnight-coffee",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "next": "15.5.2",
@@ -21,6 +24,7 @@
     "@types/react-dom": "19.1.7",
     "eslint": "9.34.0",
     "eslint-config-next": "15.5.2",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^4.1.11"
   }
 }
