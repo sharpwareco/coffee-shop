@@ -4,20 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminNav } from "./admin-nav";
 import { formatPrice } from "@/lib/format";
+import { errorMessage } from "@/lib/api-error";
+import { formatDate } from "@/lib/date";
 import type { Order, OrderStatus } from "@/types/domain";
 
 const STATUSES: OrderStatus[] = ["pending", "preparing", "ready", "completed", "cancelled"];
-
-const errorMessage = (data: unknown, fallback: string): string =>
-  typeof data === "object" && data !== null && "error" in data && typeof (data as { error?: unknown }).error === "string"
-    ? (data as { error: string }).error
-    : fallback;
-
-const formatDate = (iso: string): string => {
-  const [date, time] = iso.split("T");
-  const [year, month, day] = date.split("-");
-  return `${day}.${month}.${year} ${time.slice(0, 5)}`;
-};
 
 export function OrdersAdmin({ orders }: { orders: Order[] }) {
   const router = useRouter();

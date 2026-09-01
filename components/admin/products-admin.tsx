@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AdminNav } from "./admin-nav";
-import { formatPrice } from "@/lib/format";
+import { centsToLira, formatPrice, liraToCents } from "@/lib/format";
+import { errorMessage } from "@/lib/api-error";
 import type { Product, ProductCategory } from "@/types/domain";
 
 type Draft = {
@@ -24,14 +25,6 @@ const emptyDraft: Draft = {
   imageUrl: "",
   available: true,
 };
-
-const centsToLira = (cents: number) => (cents / 100).toFixed(2);
-const liraToCents = (input: string) => Math.round(Number(input.replace(",", ".")) * 100);
-
-const errorMessage = (data: unknown, fallback: string): string =>
-  typeof data === "object" && data !== null && "error" in data && typeof (data as { error?: unknown }).error === "string"
-    ? (data as { error: string }).error
-    : fallback;
 
 export function ProductsAdmin({ products }: { products: Product[] }) {
   const router = useRouter();

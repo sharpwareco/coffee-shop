@@ -5,30 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart, type CartItem } from "@/components/cart-context";
 import { formatPrice } from "@/lib/format";
+import { formatExpiry } from "@/lib/expiry";
+import { errorMessage } from "@/lib/api-error";
 import type { Product } from "@/types/domain";
-
-const formatExpiry = (raw: string): string => {
-  const digits = raw.replace(/\D/g, "").slice(0, 4);
-  if (digits.length === 0) return "";
-
-  const hadSlash = raw.includes("/");
-  const singleDigitMonth = digits[0] >= "2" && digits[0] <= "9";
-
-  if (digits.length === 1) {
-    return hadSlash ? `0${digits}/` : digits;
-  }
-
-  if (singleDigitMonth) {
-    return `0${digits[0]}/${digits.slice(1, 3)}`;
-  }
-
-  const month = digits.slice(0, 2);
-  const year = digits.slice(2, 4);
-  if (digits.length === 2) {
-    return hadSlash ? `${month}/` : month;
-  }
-  return `${month}/${year}`;
-};
 
 export function CheckoutForm({ products }: { products: Product[] }) {
   const router = useRouter();
@@ -72,9 +51,7 @@ export function CheckoutForm({ products }: { products: Product[] }) {
       });
       const data: unknown = await res.json();
       if (!res.ok) {
-        setError(typeof data === "object" && data !== null && "error" in data && typeof (data as { error: unknown }).error === "string"
-          ? (data as { error: string }).error
-          : "Something went wrong");
+        setError(errorMessage(data, "Something went wrong"));
         return;
       }
       clear();
