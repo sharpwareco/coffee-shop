@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { STORAGE_KEY, parseStored, type CartItem } from "@/lib/cart-storage";
 
-export type CartItem = { productId: string; quantity: number };
+export type { CartItem };
 
 type CartContextValue = {
   items: CartItem[];
@@ -14,26 +15,6 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
-
-const STORAGE_KEY = "midnight-coffee-cart";
-
-const parseStored = (raw: string | null): CartItem[] => {
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (entry): entry is CartItem =>
-        typeof entry === "object" &&
-        entry !== null &&
-        typeof (entry as CartItem).productId === "string" &&
-        Number.isInteger((entry as CartItem).quantity) &&
-        (entry as CartItem).quantity > 0
-    );
-  } catch {
-    return [];
-  }
-};
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);

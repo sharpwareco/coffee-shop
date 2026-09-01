@@ -2,11 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-
-const errorMessage = (data: unknown, fallback: string): string =>
-  typeof data === "object" && data !== null && "error" in data && typeof (data as { error?: unknown }).error === "string"
-    ? (data as { error: string }).error
-    : fallback;
+import { errorMessage } from "@/lib/api-error";
 
 export function LoginForm() {
   const router = useRouter();

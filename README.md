@@ -12,6 +12,17 @@ npm install
 npm run dev
 ```
 
+## Test
+```bash
+npm test              # run the suite
+npm run test:coverage # suite + coverage report
+```
+
+Tests are co-located as `*.test.ts` next to the code they cover, with shared helpers in `tests/support/`.
+Coverage is scoped to `lib/**` and `app/api/**` — the React components in `components/**` and
+`app/checkout/**` are **not tested and not counted**. Known defects, including several in that untested
+surface, are catalogued in [`docs/coverage-findings.md`](docs/coverage-findings.md).
+
 ## What it does
 ### Customer storefront (no login)
 - Product grid from the seed catalog.
