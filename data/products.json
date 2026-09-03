@@ -1,5 +1,5 @@
 [
-  {"id":"espresso","name":"Espresso","description":"Double shot, dense crema, zero nonsense.","price":12000,"category":"drink","imageUrl":"/products/espresso.jpg","available":true,"createdAt":"2026-08-31T00:00:00.000Z","updatedAt":"2026-08-31T00:00:00.000Z"},
+  {"id":"espresso","name":"Double Espresso","description":"Double shot, dense crema, zero nonsense.","price":12000,"category":"drink","imageUrl":"/products/espresso.jpg","available":true,"createdAt":"2026-08-31T00:00:00.000Z","updatedAt":"2026-08-31T00:00:00.000Z"},
   {"id":"americano","name":"Americano","description":"Espresso opened up with hot water.","price":14500,"category":"drink","imageUrl":"/products/americano.jpg","available":true,"createdAt":"2026-08-31T00:00:00.000Z","updatedAt":"2026-08-31T00:00:00.000Z"},
   {"id":"flat-white","name":"Flat White","description":"Velvety milk over a punchy double espresso.","price":18500,"category":"drink","imageUrl":"/products/flat-white.jpg","available":true,"createdAt":"2026-08-31T00:00:00.000Z","updatedAt":"2026-08-31T00:00:00.000Z"},
   {"id":"cappuccino","name":"Cappuccino","description":"Espresso, steamed milk and a thick foam cap.","price":18000,"category":"drink","imageUrl":"/products/cappuccino.jpg","available":true,"createdAt":"2026-08-31T00:00:00.000Z","updatedAt":"2026-08-31T00:00:00.000Z"},
@@ -8,5 +8,5 @@
   {"id":"croissant","name":"Butter Croissant","description":"Flaky, buttery and baked for coffee duty.","price":15000,"category":"food","imageUrl":"/products/croissant.jpg","available":true,"createdAt":"2026-08-31T00:00:00.000Z","updatedAt":"2026-08-31T00:00:00.000Z"},
   {"id":"cookie","name":"Chocolate Cookie","description":"Soft center, dark chocolate chunks.","price":11000,"category":"food","imageUrl":"/products/cookie.jpg","available":true,"createdAt":"2026-08-31T00:00:00.000Z","updatedAt":"2026-08-31T00:00:00.000Z"},
   {"id":"avocado-sandwich","name":"Avocado Sandwich","description":"Avocado, greens and cheese on toasted sourdough.","price":26500,"category":"food","imageUrl":"/products/avocado-sandwich.jpg","available":true,"createdAt":"2026-08-31T00:00:00.000Z","updatedAt":"2026-08-31T00:00:00.000Z"},
-  {"id":"cheesecake","name":"Cheesecake","description":"Creamy vanilla cheesecake with a biscuit base.","price":22000,"category":"food","imageUrl":"/products/cheesecake.jpg","available":true,"createdAt":"2026-08-31T00:00:00.000Z","updatedAt":"2026-08-31T00:00:00.000Z"}
+  {"id":"cheesecake","name":"Vanilla Cheesecake","description":"Creamy vanilla cheesecake with a biscuit base.","price":22000,"category":"food","imageUrl":"/products/cheesecake.jpg","available":true,"createdAt":"2026-08-31T00:00:00.000Z","updatedAt":"2026-08-31T00:00:00.000Z"}
 ]

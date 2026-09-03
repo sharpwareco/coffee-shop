@@ -116,7 +116,7 @@ describe("POST /api/orders — item validation", () => {
   it("rejects an unavailable product by name", async () => {
     updateProduct("espresso", { available: false });
     const res = await post(validPayload());
-    expect(await errorOf(res)).toBe("Espresso is not available");
+    expect(await errorOf(res)).toBe("Double Espresso is not available");
   });
 
   it.each([0, -1, 2.5])("rejects a quantity of %s", async (quantity) => {
@@ -267,7 +267,7 @@ describe("POST /api/orders — success", () => {
   it("snapshots product name and price onto the line item", async () => {
     const order = (await (await post(validPayload())).json()) as Order;
     expect(order.items).toEqual([
-      { productId: "espresso", productName: "Espresso", unitPrice: 12000, quantity: 2, subtotal: 24000 },
+      { productId: "espresso", productName: "Double Espresso", unitPrice: 12000, quantity: 2, subtotal: 24000 },
     ]);
   });
 
