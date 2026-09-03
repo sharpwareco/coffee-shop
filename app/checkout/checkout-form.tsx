@@ -9,18 +9,69 @@ import { formatExpiry } from "@/lib/expiry";
 import { errorMessage } from "@/lib/api-error";
 import type { Product } from "@/types/domain";
 
+/**
+ * What the server told us when the code was applied, plus the cart it was
+ * priced against. The discount is never recomputed here — the server owns
+ * every eligibility rule — so if the cart moves the preview is dropped rather
+ * than shown against a subtotal it was not evaluated for.
+ */
+type AppliedCoupon = { code: string; discount: number; cartKey: string };
+
 export function CheckoutForm({ products }: { products: Product[] }) {
   const router = useRouter();
   const { items, clear } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expiry, setExpiry] = useState("");
+  const [couponInput, setCouponInput] = useState("");
+  const [couponChecking, setCouponChecking] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [applied, setApplied] = useState<AppliedCoupon | null>(null);
 
   const rows = items
     .map((item) => ({ item, product: products.find((p) => p.id === item.productId) }))
     .filter((row): row is { item: CartItem; product: Product } => Boolean(row.product));
 
-  const total = rows.reduce((sum, row) => sum + row.product.price * row.item.quantity, 0);
+  const orderItems = rows.map(({ item }) => ({ productId: item.productId, quantity: item.quantity }));
+  const cartKey = orderItems.map(({ productId, quantity }) => `${productId}:${quantity}`).join("|");
+
+  const subtotal = rows.reduce((sum, row) => sum + row.product.price * row.item.quantity, 0);
+  // A preview priced against a different cart is stale, not merely inaccurate:
+  // showing it would quote a total the order route would refuse.
+  const coupon = applied && applied.cartKey === cartKey ? applied : null;
+  const couponWentStale = applied !== null && coupon === null;
+  const total = subtotal - (coupon?.discount ?? 0);
+
+  async function applyCoupon() {
+    setCouponError(null);
+    setCouponChecking(true);
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponInput, items: orderItems }),
+      });
+      const data: unknown = await res.json();
+      if (!res.ok) {
+        setApplied(null);
+        setCouponError(errorMessage(data, "That coupon could not be applied"));
+        return;
+      }
+      const preview = data as { code: string; discount: number };
+      setApplied({ code: preview.code, discount: preview.discount, cartKey });
+    } catch {
+      setApplied(null);
+      setCouponError("Network error. Please try again.");
+    } finally {
+      setCouponChecking(false);
+    }
+  }
+
+  function removeCoupon() {
+    setApplied(null);
+    setCouponError(null);
+    setCouponInput("");
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,12 +86,14 @@ export function CheckoutForm({ products }: { products: Product[] }) {
         phone: form.get("phone"),
         address: form.get("address"),
       },
-      items: rows.map(({ item }) => ({ productId: item.productId, quantity: item.quantity })),
+      items: orderItems,
       card: {
         number: form.get("cardNumber"),
         expiry: form.get("expiry"),
         cvc: form.get("cvc"),
       },
+      // Only the code travels: the order route re-evaluates it from scratch.
+      ...(coupon ? { couponCode: coupon.code } : {}),
     };
 
     try {
@@ -111,6 +164,40 @@ export function CheckoutForm({ products }: { products: Product[] }) {
               </li>
             ))}
           </ul>
+          <div className="coupon-field">
+            {coupon ? (
+              <div className="coupon-applied">
+                <span className="muted">Coupon {coupon.code} applied</span>
+                <button type="button" className="remove-btn" onClick={removeCoupon}>Remove</button>
+              </div>
+            ) : (
+              <div className="coupon-row">
+                <input
+                  aria-label="Coupon code"
+                  placeholder="Coupon code"
+                  autoComplete="off"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="button-secondary"
+                  onClick={applyCoupon}
+                  disabled={couponChecking || couponInput.trim() === ""}
+                >
+                  {couponChecking ? "Checking…" : "Apply"}
+                </button>
+              </div>
+            )}
+            {couponWentStale && <p className="muted">Your cart changed, so the coupon was cleared. Apply it again.</p>}
+            {couponError && <p className="form-error">{couponError}</p>}
+          </div>
+          {coupon && (
+            <ul className="summary-list">
+              <li><span>Subtotal</span><span>{formatPrice(subtotal)}</span></li>
+              <li><span>Discount</span><span>−{formatPrice(coupon.discount)}</span></li>
+            </ul>
+          )}
           <div className="cart-total">
             <span>Total</span>
             <strong>{formatPrice(total)}</strong>

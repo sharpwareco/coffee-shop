@@ -35,6 +35,18 @@ export default async function Confirmation({ searchParams }: { searchParams: Pro
               </li>
             ))}
           </ul>
+          {order.discount > 0 && (
+            <ul className="summary-list">
+              <li>
+                <span>Subtotal</span>
+                <span>{formatPrice(order.subtotal)}</span>
+              </li>
+              <li>
+                <span>Discount</span>
+                <span>−{formatPrice(order.discount)}</span>
+              </li>
+            </ul>
+          )}
           <div className="cart-total">
             <span>Total</span>
             <strong>{formatPrice(order.total)}</strong>

@@ -75,7 +75,17 @@ export function OrdersAdmin({ orders }: { orders: Order[] }) {
                     </div>
                   ))}
                 </td>
-                <td>{formatPrice(order.total)}</td>
+                <td>
+                  <div>{formatPrice(order.total)}</div>
+                  {order.coupon && (
+                    <div className="muted">
+                      <span className="mono">{order.coupon.code}</span> −{formatPrice(order.discount)}
+                      {order.discount < order.coupon.amountOff && (
+                        <> (capped from {formatPrice(order.coupon.amountOff)})</>
+                      )}
+                    </div>
+                  )}
+                </td>
                 <td>
                   <select value={order.status} onChange={(e) => changeStatus(order, e.target.value as OrderStatus)}>
                     {STATUSES.map((status) => (
