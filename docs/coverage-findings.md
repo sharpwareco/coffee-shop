@@ -90,7 +90,7 @@ identity. Left unfixed only because it is out of scope here, not because it is r
 
 - Pinned by: `lib/store.test.ts` → *"hands out the live internal array"*
 
-## 5. `quantity` coercion is far wider than it looks — `app/api/orders/route.ts:36-40`
+## 5. `quantity` coercion is far wider than it looks — `lib/cart-pricing.ts:24-33`
 
 `Number(entry.quantity)` accepts much more than the intended integer:
 
@@ -107,16 +107,23 @@ class of hole.
 Separately, the product lookup runs **before** the quantity check, so `{ productId: "nope", quantity: 0 }`
 reports only `Unknown product: nope`; a client fixing the reported problem gets a second rejection.
 
-- Pinned by: `app/api/orders/route.test.ts` → *"silently coerces %s quantity"*, *"accepts an absurdly large
-  quantity with no upper bound"*, *"reports an unknown product before an invalid quantity"*
+Since coupons landed, `priceCart` is shared by `POST /api/orders` and `POST /api/coupons/validate`, so both
+endpoints inherit this. That is deliberate: a preview that accepted a different set of carts than the order
+route would quote totals the customer cannot pay.
 
-## 6. Duplicate product ids become duplicate line items — `app/api/orders/route.ts:32-48`
+- Pinned by: `app/api/orders/route.test.ts` → *"silently coerces %s quantity"*, *"accepts an absurdly large
+  quantity with no upper bound"*, *"reports an unknown product before an invalid quantity"*; and
+  `lib/cart-pricing.test.ts` → *"accepts numeric-string quantities"*, *"checks the product before the
+  quantity"*
+
+## 6. Duplicate product ids become duplicate line items — `lib/cart-pricing.ts:22-40`
 
 Posting the same `productId` twice produces two line items rather than one merged item. The total is still
 correct, so this is a presentation/product decision — but the confirmation page and admin table both render
 the product twice.
 
-- Pinned by: `app/api/orders/route.test.ts` → *"keeps duplicate product ids as separate line items"*
+- Pinned by: `app/api/orders/route.test.ts` → *"keeps duplicate product ids as separate line items"*, and
+  `lib/cart-pricing.test.ts` → *"keeps a repeated product as two separate lines"*
 
 ## 7. `PUT` silently no-ops on falsy values and dirties `updatedAt` — `app/api/products/[id]/route.ts:32-45`
 

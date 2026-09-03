@@ -73,6 +73,12 @@ describe("evaluateCoupon", () => {
     expect(evaluateCoupon(coupon, 20000, new Date(NOW.getTime() - 1)).ok).toBe(true);
   });
 
+  it("treats an unparsable expiry as expired, not as never expiring", () => {
+    // NaN comparisons are all false, so a naive `parsed <= now` would read a
+    // malformed date as a coupon that no date could ever switch off.
+    expect(evaluateCoupon(makeCoupon({ expiresAt: "not a date" }), 20000, NOW).ok).toBe(false);
+  });
+
   it("accepts a subtotal exactly equal to minSubtotal", () => {
     const coupon = makeCoupon({ minSubtotal: 20000 });
     expect(evaluateCoupon(coupon, 20000, NOW)).toEqual({ ok: true, discount: 5000, coupon });

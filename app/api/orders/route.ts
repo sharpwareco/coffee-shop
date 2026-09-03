@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { createOrder, getCoupon, getProduct } from "@/lib/store";
+import { createOrder, getCoupon } from "@/lib/store";
 import { evaluateCoupon, normalizeCouponCode } from "@/lib/coupon";
-import type { AppliedCoupon, OrderItem } from "@/types/domain";
+import { priceCart } from "@/lib/cart-pricing";
+import type { AppliedCoupon } from "@/types/domain";
 
 const badRequest = (error: string) => NextResponse.json({ error }, { status: 400 });
 
@@ -29,24 +30,9 @@ export async function POST(request: Request) {
   if (!name || !email || !phone || !address) return badRequest("Missing customer fields");
   if (!email.includes("@")) return badRequest("Invalid email");
 
-  const orderItems: OrderItem[] = [];
-  for (const raw of items) {
-    if (typeof raw !== "object" || raw === null) return badRequest("Invalid item");
-    const entry = raw as Record<string, unknown>;
-    const productId = typeof entry.productId === "string" ? entry.productId : "";
-    const quantity = Number(entry.quantity);
-    const product = getProduct(productId);
-    if (!product) return badRequest(`Unknown product: ${productId}`);
-    if (!product.available) return badRequest(`${product.name} is not available`);
-    if (!Number.isInteger(quantity) || quantity < 1) return badRequest("Invalid quantity");
-    orderItems.push({
-      productId: product.id,
-      productName: product.name,
-      unitPrice: product.price,
-      quantity,
-      subtotal: product.price * quantity,
-    });
-  }
+  const pricing = priceCart(items);
+  if (!pricing.ok) return badRequest(pricing.error);
+  const orderItems = pricing.items;
 
   const k = card as Record<string, unknown>;
   const number = typeof k.number === "string" ? k.number.replace(/\D/g, "") : "";
@@ -65,7 +51,7 @@ export async function POST(request: Request) {
   const expiryMonth = year * 12 + (month - 1);
   if (month < 1 || month > 12 || expiryMonth <= currentMonth) return badRequest("Card is expired");
 
-  const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const subtotal = pricing.subtotal;
 
   // The coupon is re-evaluated here from scratch: /api/coupons/validate is a
   // preview, and nothing it returned is carried over or trusted. Only the code

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { getCoupon, getProduct } from "@/lib/store";
+import { getCoupon } from "@/lib/store";
 import { evaluateCoupon, normalizeCouponCode } from "@/lib/coupon";
+import { priceCart } from "@/lib/cart-pricing";
 
 const badRequest = (error: string) => NextResponse.json({ error }, { status: 400 });
 
@@ -9,10 +10,11 @@ const badRequest = (error: string) => NextResponse.json({ error }, { status: 400
  * storefront affordance and it grants nothing — POST /api/orders re-evaluates
  * the coupon from scratch, so this response carries no authority.
  *
- * The subtotal is computed here from the store's own product prices. Nothing
- * price-shaped on the request is read: a client-supplied subtotal could lie its
- * way past `minSubtotal`, and item validation mirrors POST /api/orders so the
- * preview rejects the same carts the order route would.
+ * The subtotal is computed here from the store's own product prices, through
+ * the same priceCart the order route uses — so the preview cannot accept a
+ * cart the order route would reject, or price one differently. Nothing
+ * price-shaped on the request is read: a client-supplied subtotal could
+ * otherwise lie its way past `minSubtotal`.
  */
 export async function POST(request: Request) {
   let body: unknown;
@@ -30,18 +32,9 @@ export async function POST(request: Request) {
   if (!normalized) return badRequest("Coupon code is required");
   if (!Array.isArray(items) || items.length === 0) return badRequest("Cart is empty");
 
-  let subtotal = 0;
-  for (const raw of items) {
-    if (typeof raw !== "object" || raw === null) return badRequest("Invalid item");
-    const entry = raw as Record<string, unknown>;
-    const productId = typeof entry.productId === "string" ? entry.productId : "";
-    const quantity = Number(entry.quantity);
-    const product = getProduct(productId);
-    if (!product) return badRequest(`Unknown product: ${productId}`);
-    if (!product.available) return badRequest(`${product.name} is not available`);
-    if (!Number.isInteger(quantity) || quantity < 1) return badRequest("Invalid quantity");
-    subtotal += product.price * quantity;
-  }
+  const pricing = priceCart(items);
+  if (!pricing.ok) return badRequest(pricing.error);
+  const subtotal = pricing.subtotal;
 
   const evaluation = evaluateCoupon(getCoupon(normalized), subtotal, new Date());
   if (!evaluation.ok) return badRequest(evaluation.reason);

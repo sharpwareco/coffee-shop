@@ -41,10 +41,15 @@ export const evaluateCoupon = (
 ): CouponEvaluation => {
   if (!coupon || !coupon.active) return { ok: false, reason: NOT_VALID };
 
-  // expiresAt is the instant the coupon stops working, not the last instant it
-  // works — so the boundary itself is expired.
-  if (coupon.expiresAt !== null && Date.parse(coupon.expiresAt) <= now.getTime()) {
-    return { ok: false, reason: `Coupon ${coupon.code} has expired` };
+  if (coupon.expiresAt !== null) {
+    const expiresAt = Date.parse(coupon.expiresAt);
+    // expiresAt is the instant the coupon stops working, not the last instant
+    // it works, so the boundary itself is expired. An unparsable date counts as
+    // expired too: NaN comparisons are all false, so the naive check would turn
+    // a typo in the seed file into a coupon no date could ever switch off.
+    if (Number.isNaN(expiresAt) || expiresAt <= now.getTime()) {
+      return { ok: false, reason: `Coupon ${coupon.code} has expired` };
+    }
   }
 
   if (subtotal < coupon.minSubtotal) {
