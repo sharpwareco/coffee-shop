@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { createOrder, getProduct } from "@/lib/store";
-import type { OrderItem } from "@/types/domain";
+import { createOrder, getCoupon, getProduct } from "@/lib/store";
+import { evaluateCoupon, normalizeCouponCode } from "@/lib/coupon";
+import type { AppliedCoupon, OrderItem } from "@/types/domain";
 
 const badRequest = (error: string) => NextResponse.json({ error }, { status: 400 });
 
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
 
   if (typeof body !== "object" || body === null) return badRequest("Invalid request body");
 
-  const { customer, items, card } = body as Record<string, unknown>;
+  const { customer, items, card, couponCode } = body as Record<string, unknown>;
 
   if (typeof customer !== "object" || customer === null) return badRequest("Missing customer");
   if (!Array.isArray(items) || items.length === 0) return badRequest("Cart is empty");
@@ -65,7 +66,25 @@ export async function POST(request: Request) {
   if (month < 1 || month > 12 || expiryMonth <= currentMonth) return badRequest("Card is expired");
 
   const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
-  const discount = 0;
+
+  // The coupon is re-evaluated here from scratch: /api/coupons/validate is a
+  // preview, and nothing it returned is carried over or trusted. Only the code
+  // itself comes from the client; the discount is derived from the server-side
+  // subtotal computed just above.
+  const code = typeof couponCode === "string" ? normalizeCouponCode(couponCode) : "";
+  let discount = 0;
+  let appliedCoupon: AppliedCoupon | null = null;
+
+  if (code) {
+    const evaluation = evaluateCoupon(getCoupon(code), subtotal, new Date());
+    // A coupon that has since expired, been switched off, or no longer clears
+    // its minimum rejects the whole order. Silently placing it undiscounted
+    // would charge more than the checkout page showed.
+    if (!evaluation.ok) return badRequest(evaluation.reason);
+    discount = evaluation.discount;
+    appliedCoupon = { code: evaluation.coupon.code, amountOff: evaluation.coupon.amountOff };
+  }
+
   const timestamp = new Date().toISOString();
 
   const order = createOrder({
@@ -74,7 +93,7 @@ export async function POST(request: Request) {
     items: orderItems,
     subtotal,
     discount,
-    coupon: null,
+    coupon: appliedCoupon,
     total: subtotal - discount,
     payment: { method: "card", last4: number.slice(-4) },
     status: "pending",

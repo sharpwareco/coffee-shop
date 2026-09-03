@@ -313,3 +313,134 @@ describe("POST /api/orders — success", () => {
     expect(listOrders()).toHaveLength(2);
   });
 });
+
+describe("POST /api/orders — coupons", () => {
+  // The cart in validPayload() is 2 x espresso = 24000, which sits above
+  // WELCOME50's zero threshold and below BIGORDER100's 50000 minimum.
+  const SUBTOTAL = 12000 * 2;
+
+  it.each([undefined, "", "   "])(
+    "records no discount when couponCode is %j",
+    async (couponCode) => {
+      const order = (await (await post(validPayload({ couponCode }))).json()) as Order;
+      expect(order.subtotal).toBe(SUBTOTAL);
+      expect(order.discount).toBe(0);
+      expect(order.coupon).toBeNull();
+      expect(order.total).toBe(SUBTOTAL);
+    }
+  );
+
+  it("ignores a non-string couponCode rather than rejecting the order", async () => {
+    const res = await post(validPayload({ couponCode: 42 }));
+    expect(res.status).toBe(201);
+    const order = (await res.json()) as Order;
+    expect(order.discount).toBe(0);
+    expect(order.coupon).toBeNull();
+  });
+
+  it("applies a valid coupon to the persisted order", async () => {
+    const res = await post(validPayload({ couponCode: "WELCOME50" }));
+    expect(res.status).toBe(201);
+
+    const order = (await res.json()) as Order;
+    expect(order.subtotal).toBe(SUBTOTAL);
+    expect(order.discount).toBe(5000);
+    expect(order.coupon).toEqual({ code: "WELCOME50", amountOff: 5000 });
+    expect(order.total).toBe(SUBTOTAL - 5000);
+
+    // The discount must survive onto the stored record, not just the response.
+    const stored = listOrders()[0];
+    expect(stored.discount).toBe(5000);
+    expect(stored.coupon).toEqual({ code: "WELCOME50", amountOff: 5000 });
+    expect(stored.total).toBe(SUBTOTAL - 5000);
+  });
+
+  it("clamps a coupon worth more than the cart, never paying the customer", async () => {
+    // ONTHEHOUSE300 is 30000 off against a 12000 cart.
+    const items = [{ productId: "espresso", quantity: 1 }];
+    const res = await post(validPayload({ items, couponCode: "ONTHEHOUSE300" }));
+    expect(res.status).toBe(201);
+
+    const order = (await res.json()) as Order;
+    expect(order.subtotal).toBe(12000);
+    expect(order.total).toBe(0);
+    expect(order.discount).toBe(12000);
+    expect(order.coupon).toEqual({ code: "ONTHEHOUSE300", amountOff: 30000 });
+    // The claimed coupon and what was actually deducted deliberately differ.
+    expect(order.discount).toBeLessThan(order.coupon!.amountOff);
+  });
+
+  it("normalizes a lowercase code with surrounding whitespace", async () => {
+    const res = await post(validPayload({ couponCode: "  welcome50  " }));
+    expect(res.status).toBe(201);
+    const order = (await res.json()) as Order;
+    expect(order.coupon).toEqual({ code: "WELCOME50", amountOff: 5000 });
+    expect(order.total).toBe(SUBTOTAL - 5000);
+  });
+
+  it("rejects an unknown code without creating an order", async () => {
+    const res = await post(validPayload({ couponCode: "NOSUCHCODE" }));
+    expect(res.status).toBe(400);
+    expect(await errorOf(res)).toBe("That coupon code is not valid");
+    expect(listOrders()).toHaveLength(0);
+  });
+
+  it("rejects an inactive code without creating an order", async () => {
+    // Deactivated coupons share the unknown-code message on purpose, so a
+    // stranger cannot confirm that a guessed code is real.
+    const res = await post(validPayload({ couponCode: "LEGACY10" }));
+    expect(res.status).toBe(400);
+    expect(await errorOf(res)).toBe("That coupon code is not valid");
+    expect(listOrders()).toHaveLength(0);
+  });
+
+  it("rejects an expired code without creating an order", async () => {
+    // SUMMER25 expires 2026-06-30; the suite clock sits before that, so this
+    // test moves past the expiry rather than relying on the real date.
+    vi.setSystemTime(new Date("2026-07-01T00:00:00.000Z"));
+    const res = await post(validPayload({ couponCode: "SUMMER25" }));
+    expect(res.status).toBe(400);
+    expect(await errorOf(res)).toBe("Coupon SUMMER25 has expired");
+    expect(listOrders()).toHaveLength(0);
+  });
+
+  it("rejects a cart below the coupon's minimum subtotal", async () => {
+    // BIGORDER100 needs 50000; the cart is 24000.
+    const res = await post(validPayload({ couponCode: "BIGORDER100" }));
+    expect(res.status).toBe(400);
+    expect(await errorOf(res)).toBe("Coupon BIGORDER100 requires a minimum of ₺500,00");
+    expect(listOrders()).toHaveLength(0);
+  });
+
+  it("accepts the same coupon once the cart clears its minimum", async () => {
+    const items = [{ productId: "espresso", quantity: 5 }];
+    const res = await post(validPayload({ items, couponCode: "BIGORDER100" }));
+    expect(res.status).toBe(201);
+    const order = (await res.json()) as Order;
+    expect(order.subtotal).toBe(60000);
+    expect(order.discount).toBe(10000);
+    expect(order.total).toBe(50000);
+  });
+
+  it("re-evaluates the coupon against server-priced items, not client claims", async () => {
+    // Nothing the client sends about prices or subtotals is trusted; the only
+    // coupon input honoured is the code itself.
+    const res = await post(
+      validPayload({ couponCode: "WELCOME50", subtotal: 1, discount: 999999, total: 0 })
+    );
+    const order = (await res.json()) as Order;
+    expect(order.subtotal).toBe(SUBTOTAL);
+    expect(order.discount).toBe(5000);
+    expect(order.total).toBe(SUBTOTAL - 5000);
+  });
+
+  it("reports a card fault before evaluating the coupon", async () => {
+    // The coupon check lands after card validation, so an unusable card is
+    // reported as such rather than being masked by a coupon message.
+    const res = await post(
+      validPayload({ card: { ...validPayload().card, cvc: "12" }, couponCode: "NOSUCHCODE" })
+    );
+    expect(await errorOf(res)).toBe("Invalid CVC");
+    expect(listOrders()).toHaveLength(0);
+  });
+});
