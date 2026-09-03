@@ -33,7 +33,7 @@ describe("GET /api/products/[id]", () => {
   it("returns the product", async () => {
     const res = await get("espresso");
     expect(res.status).toBe(200);
-    expect(((await res.json()) as Product).name).toBe("Espresso");
+    expect(((await res.json()) as Product).name).toBe("Double Espresso");
   });
 
   it("404s for an unknown id", async () => {
@@ -74,7 +74,7 @@ describe("PUT /api/products/[id]", () => {
 
     const product = (await res.json()) as Product;
     expect(product.price).toBe(13500);
-    expect(product.name).toBe("Espresso");
+    expect(product.name).toBe("Double Espresso");
     expect(product.category).toBe("drink");
   });
 
@@ -105,7 +105,7 @@ describe("PUT /api/products/[id]", () => {
     // requires a non-empty trimmed string, so a blank name is dropped from the
     // patch rather than returning 400. See docs/coverage-findings.md #7.
     const product = (await (await put("espresso", { name: "   " })).json()) as Product;
-    expect(product.name).toBe("Espresso");
+    expect(product.name).toBe("Double Espresso");
   });
 
   it("can set a price to zero", async () => {
@@ -135,7 +135,7 @@ describe("PUT /api/products/[id]", () => {
     vi.setSystemTime(new Date("2026-09-01T10:00:00.000Z"));
 
     const product = (await (await put("espresso", { name: "   " })).json()) as Product;
-    expect(product.name).toBe("Espresso");
+    expect(product.name).toBe("Double Espresso");
     expect(product.updatedAt).toBe("2026-09-01T10:00:00.000Z");
     expect(product.createdAt).toBe("2026-08-31T00:00:00.000Z");
 
@@ -161,7 +161,7 @@ describe("PUT /api/products/[id]", () => {
 
   it("leaves the product untouched when validation fails", async () => {
     await put("espresso", { name: "Renamed", price: -1 });
-    expect(getProduct("espresso")?.name).toBe("Espresso");
+    expect(getProduct("espresso")?.name).toBe("Double Espresso");
   });
 });
 
