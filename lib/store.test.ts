@@ -49,7 +49,7 @@ describe("products", () => {
   });
 
   it("finds a product by id", () => {
-    expect(getProduct("espresso")?.name).toBe("Espresso");
+    expect(getProduct("espresso")?.name).toBe("Double Espresso");
   });
 
   it("returns undefined for an unknown id", () => {
@@ -71,7 +71,7 @@ describe("products", () => {
 
     expect(updated?.price).toBe(13000);
     expect(updated?.available).toBe(false);
-    expect(updated?.name).toBe("Espresso");
+    expect(updated?.name).toBe("Double Espresso");
     expect(updated?.updatedAt).toBe("2026-09-01T10:00:00.000Z");
     expect(updated?.createdAt).toBe("2026-08-31T00:00:00.000Z");
 
