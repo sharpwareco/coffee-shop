@@ -64,14 +64,18 @@ export async function POST(request: Request) {
   const expiryMonth = year * 12 + (month - 1);
   if (month < 1 || month > 12 || expiryMonth <= currentMonth) return badRequest("Card is expired");
 
-  const total = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const discount = 0;
   const timestamp = new Date().toISOString();
 
   const order = createOrder({
     id: crypto.randomUUID(),
     customer: { name, email, phone, address },
     items: orderItems,
-    total,
+    subtotal,
+    discount,
+    coupon: null,
+    total: subtotal - discount,
     payment: { method: "card", last4: number.slice(-4) },
     status: "pending",
     createdAt: timestamp,

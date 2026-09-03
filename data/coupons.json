@@ -1,0 +1,7 @@
+[
+  {"code":"WELCOME50","description":"Welcome discount on your first order","amountOff":5000,"minSubtotal":0,"expiresAt":null,"active":true},
+  {"code":"BIGORDER100","description":"Large-order discount","amountOff":10000,"minSubtotal":50000,"expiresAt":null,"active":true},
+  {"code":"ONTHEHOUSE300","description":"Goodwill discount, worth more than a small order","amountOff":30000,"minSubtotal":0,"expiresAt":null,"active":true},
+  {"code":"SUMMER25","description":"Summer coupon, ran through June","amountOff":2500,"minSubtotal":0,"expiresAt":"2026-06-30T23:59:59.000Z","active":true},
+  {"code":"LEGACY10","description":"Retired launch coupon","amountOff":1000,"minSubtotal":0,"expiresAt":null,"active":false}
+]

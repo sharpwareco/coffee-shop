@@ -21,7 +21,7 @@ There is no separate typecheck script; `npm run build` is the type gate (`tsc --
 
 Next.js 15 App Router, React 19, TypeScript strict, zero runtime dependencies beyond Next/React. No database, ORM, payment provider, customer auth, or validation library — that is deliberate (see "Demo philosophy" in README.md). Prefer shallow folders and direct functions over layered abstractions.
 
-**In-memory store (`lib/store.ts`)** — the whole data layer. `data/products.json` is `structuredClone`d into a singleton hung off `globalThis.__midnightCoffeeStore` so Next's dev-server module reloading doesn't duplicate it. Runtime mutations are never written back to JSON; restarting the server resets products to seed and drops all orders. Store getters (`listProducts`, `listOrders`) return the live internal arrays, and mutators (`updateProduct`, `updateOrderStatus`) mutate objects in place — callers share references with the store.
+**In-memory store (`lib/store.ts`)** — the whole data layer. `data/products.json` and `data/coupons.json` are `structuredClone`d into a singleton hung off `globalThis.__midnightCoffeeStore` so Next's dev-server module reloading doesn't duplicate it. Runtime mutations are never written back to JSON; restarting the server resets products and coupons to seed and drops all orders. Store getters (`listProducts`, `listOrders`, `listCoupons`) return the live internal arrays, and mutators (`updateProduct`, `updateOrderStatus`) mutate objects in place — callers share references with the store.
 
 **Server components read the store directly.** `app/page.tsx`, `app/cart/page.tsx`, `app/checkout/page.tsx` and the admin pages call `listProducts()`/`listOrders()` at render time and pass results into `"use client"` components. The API routes exist for mutations and for client-side fetches, not as the read path for pages.
 
@@ -47,3 +47,17 @@ Tests are co-located `*.test.ts` beside the code, with shared helpers in `tests/
 Coverage is scoped to `lib/**/*.ts` and `app/api/**/*.ts`. `components/**` and `app/checkout/**` are untested **and uncounted** — not low-risk; several known defects live there. The `.tsx` exclusion is also forced by a `@vitest/coverage-v8` 4.1.11 bug (JSX parse failure in the uncovered-file pass); recheck on upgrade.
 
 **`docs/coverage-findings.md` catalogues 16 known defects that are intentionally NOT fixed.** Most are pinned by tests carrying a `NOTE:` comment at the assertion, so "fixing" one breaks its test. Before changing behavior in `lib/date.ts`, `lib/format.ts`, `lib/cart-storage.ts`, the card-expiry check in `app/api/orders/route.ts`, or the `PUT` patch logic in `app/api/products/[id]/route.ts`, read that doc — if a fix is genuinely wanted, update the pinning test and the doc entry together rather than silently flipping the assertion.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as markdown files under `.scratch/<feature-slug>/` in this repo. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles, used verbatim as `Status:` values in issue files. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.

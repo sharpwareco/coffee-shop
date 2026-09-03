@@ -9,11 +9,14 @@ import {
   listProducts,
   updateOrderStatus,
   updateProduct,
+  listCoupons,
+  getCoupon,
 } from "@/lib/store";
 import type { Order, Product } from "@/types/domain";
 import { resetStore } from "@/tests/support/store";
 
 const SEEDED_PRODUCTS = 10;
+const SEEDED_COUPONS = 5;
 
 const makeProduct = (overrides: Partial<Product> = {}): Product => ({
   id: "test-product",
@@ -32,6 +35,9 @@ const makeOrder = (overrides: Partial<Order> = {}): Order => ({
   id: "order-1",
   customer: { name: "Ada", email: "ada@example.test", phone: "555", address: "Somewhere" },
   items: [{ productId: "espresso", productName: "Espresso", unitPrice: 12000, quantity: 1, subtotal: 12000 }],
+  subtotal: 12000,
+  discount: 0,
+  coupon: null,
   total: 12000,
   payment: { method: "card", last4: "4242" },
   status: "pending",
@@ -133,6 +139,47 @@ describe("orders", () => {
 
   it("returns undefined when updating an unknown order", () => {
     expect(updateOrderStatus("nope", "ready")).toBeUndefined();
+  });
+});
+
+describe("coupons", () => {
+  it("seeds from data/coupons.json", () => {
+    expect(listCoupons()).toHaveLength(SEEDED_COUPONS);
+  });
+
+  it("finds a coupon by its exact stored code", () => {
+    expect(getCoupon("WELCOME50")?.amountOff).toBe(5000);
+  });
+
+  it("does not normalize the code it is given", () => {
+    // getCoupon is deliberately dumb: normalization belongs to one shared
+    // helper on the caller side, so no two call sites can drift apart.
+    expect(getCoupon("welcome50")).toBeUndefined();
+    expect(getCoupon(" WELCOME50 ")).toBeUndefined();
+  });
+
+  it("returns undefined for an unknown code", () => {
+    expect(getCoupon("NOPE")).toBeUndefined();
+  });
+
+  it("seeds coupons that exercise every eligibility rule", () => {
+    const coupons = listCoupons();
+    expect(coupons.some((c) => c.minSubtotal > 0)).toBe(true);
+    expect(coupons.some((c) => c.expiresAt !== null && Date.parse(c.expiresAt) < Date.now())).toBe(true);
+    expect(coupons.some((c) => !c.active)).toBe(true);
+    expect(coupons.some((c) => c.minSubtotal === 0 && c.expiresAt === null && c.active)).toBe(true);
+  });
+
+  it("seeds a coupon worth more than the cheapest possible cart", () => {
+    // Otherwise the clamp (discount = min(amountOff, subtotal), spec.md) would
+    // be unreachable from seed data and issue 04 could not test it honestly.
+    const cheapestProduct = Math.min(...listProducts().map((p) => p.price));
+    const eligibleEverywhere = listCoupons().filter((c) => c.active && c.minSubtotal === 0);
+    expect(eligibleEverywhere.some((c) => c.amountOff > cheapestProduct)).toBe(true);
+  });
+
+  it("stores every code in canonical uppercase form", () => {
+    for (const coupon of listCoupons()) expect(coupon.code).toBe(coupon.code.toUpperCase());
   });
 });
 

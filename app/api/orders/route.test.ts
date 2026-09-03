@@ -280,6 +280,18 @@ describe("POST /api/orders — success", () => {
     expect(order.total).toBe(12000 * 2 + 11000 * 3);
   });
 
+  it("records a coupon-free order with a zero discount", async () => {
+    const items = [
+      { productId: "espresso", quantity: 2 },
+      { productId: "cookie", quantity: 3 },
+    ];
+    const order = (await (await post(validPayload({ items }))).json()) as Order;
+    expect(order.subtotal).toBe(12000 * 2 + 11000 * 3);
+    expect(order.discount).toBe(0);
+    expect(order.coupon).toBeNull();
+    expect(order.total).toBe(order.subtotal - order.discount);
+  });
+
   it("stores the LAST four card digits, not the first four", async () => {
     // The fixture PAN starts 4111 and ends 1234 precisely so this assertion can
     // tell slice(-4) from slice(0, 4). A repdigit card number cannot.

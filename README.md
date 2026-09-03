@@ -38,9 +38,9 @@ surface, are catalogued in [`docs/coverage-findings.md`](docs/coverage-findings.
 - Admin mutation APIs are protected server-side with a small HttpOnly-cookie session.
 
 ## Data model
-`data/products.json` is loaded into a process-global in-memory datastore in `lib/store.ts`.
+`data/products.json` and `data/coupons.json` are loaded into a process-global in-memory datastore in `lib/store.ts`.
 
-Runtime changes are intentionally NOT written back to JSON. Restarting the Next.js server resets products to the seed and removes all orders.
+Runtime changes are intentionally NOT written back to JSON. Restarting the Next.js server resets products and coupons to the seed and removes all orders.
 
 ## Demo warnings
 - **Not for production.** No database, ORM, real payment provider, customer auth, or rate limiting.

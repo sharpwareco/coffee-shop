@@ -21,6 +21,21 @@ export type Customer = {
   address: string;
 };
 
+export type Coupon = {
+  code: string;
+  description: string;
+  amountOff: number;
+  minSubtotal: number;
+  expiresAt: string | null;
+  active: boolean;
+};
+
+/** The Coupon a customer claimed on one Order, as recorded on that Order. */
+export type AppliedCoupon = {
+  code: string;
+  amountOff: number;
+};
+
 export type OrderItem = {
   productId: string;
   productName: string;
@@ -33,6 +48,9 @@ export type Order = {
   id: string;
   customer: Customer;
   items: OrderItem[];
+  subtotal: number;
+  discount: number;
+  coupon: AppliedCoupon | null;
   total: number;
   payment: { method: "card"; last4: string };
   status: OrderStatus;
