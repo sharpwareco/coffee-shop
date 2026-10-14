@@ -31,7 +31,9 @@ const makeProduct = (overrides: Partial<Product> = {}): Product => ({
 const makeOrder = (overrides: Partial<Order> = {}): Order => ({
   id: "order-1",
   customer: { name: "Ada", email: "ada@example.test", phone: "555", address: "Somewhere" },
-  items: [{ productId: "espresso", productName: "Espresso", unitPrice: 12000, quantity: 1, subtotal: 12000 }],
+  items: [{ productId: "espresso", productName: "Espresso", unitPrice: 12000, quantity: 1, lineTotal: 12000 }],
+  subtotal: 12000,
+  discount: 0,
   total: 12000,
   payment: { method: "card", last4: "4242" },
   status: "pending",

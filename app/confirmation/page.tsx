@@ -31,7 +31,7 @@ export default async function Confirmation({ searchParams }: { searchParams: Pro
             {order.items.map((item) => (
               <li key={item.productId}>
                 <span>{item.productName} × {item.quantity}</span>
-                <span>{formatPrice(item.subtotal)}</span>
+                <span>{formatPrice(item.lineTotal)}</span>
               </li>
             ))}
           </ul>
