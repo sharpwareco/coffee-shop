@@ -69,7 +69,7 @@ export function OrdersAdmin({ orders }: { orders: Order[] }) {
                     <div key={item.productId} className="order-item">
                       <div className="order-item-line">
                         <span>{item.quantity} × {item.productName}</span>
-                        <span>{formatPrice(item.lineTotal)}</span>
+                        <span>{formatPrice(item.subtotal)}</span>
                       </div>
                       <div className="muted order-item-unit">{formatPrice(item.unitPrice)} each</div>
                     </div>

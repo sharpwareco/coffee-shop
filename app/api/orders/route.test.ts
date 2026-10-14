@@ -267,21 +267,17 @@ describe("POST /api/orders — success", () => {
   it("snapshots product name and price onto the line item", async () => {
     const order = (await (await post(validPayload())).json()) as Order;
     expect(order.items).toEqual([
-      { productId: "espresso", productName: "Double Espresso", unitPrice: 12000, quantity: 2, lineTotal: 24000 },
+      { productId: "espresso", productName: "Double Espresso", unitPrice: 12000, quantity: 2, subtotal: 24000 },
     ]);
   });
 
-  it("sums line totals into the subtotal, with no discount and a total equal to the subtotal", async () => {
+  it("totals the subtotals across line items", async () => {
     const items = [
       { productId: "espresso", quantity: 2 },
       { productId: "cookie", quantity: 3 },
     ];
     const order = (await (await post(validPayload({ items }))).json()) as Order;
-    expect(order.items.map((item) => item.lineTotal)).toEqual([24000, 33000]);
-    expect(order.subtotal).toBe(57000);
-    expect(order.discount).toBe(0);
-    expect(order.total).toBe(57000);
-    expect(listOrders()[0]).toMatchObject({ subtotal: 57000, discount: 0, total: 57000 });
+    expect(order.total).toBe(12000 * 2 + 11000 * 3);
   });
 
   it("stores the LAST four card digits, not the first four", async () => {

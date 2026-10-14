@@ -26,15 +26,13 @@ export type OrderItem = {
   productName: string;
   unitPrice: number;
   quantity: number;
-  lineTotal: number;
+  subtotal: number;
 };
 
 export type Order = {
   id: string;
   customer: Customer;
   items: OrderItem[];
-  subtotal: number;
-  discount: number;
   total: number;
   payment: { method: "card"; last4: string };
   status: OrderStatus;

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createOrder, getProduct } from "@/lib/store";
-import { lineTotal, priceOrder } from "@/lib/pricing";
 import type { OrderItem } from "@/types/domain";
 
 const badRequest = (error: string) => NextResponse.json({ error }, { status: 400 });
@@ -44,7 +43,7 @@ export async function POST(request: Request) {
       productName: product.name,
       unitPrice: product.price,
       quantity,
-      lineTotal: lineTotal({ unitPrice: product.price, quantity }),
+      subtotal: product.price * quantity,
     });
   }
 
@@ -65,15 +64,13 @@ export async function POST(request: Request) {
   const expiryMonth = year * 12 + (month - 1);
   if (month < 1 || month > 12 || expiryMonth <= currentMonth) return badRequest("Card is expired");
 
-  const { subtotal, discount, total } = priceOrder(orderItems);
+  const total = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
   const timestamp = new Date().toISOString();
 
   const order = createOrder({
     id: crypto.randomUUID(),
     customer: { name, email, phone, address },
     items: orderItems,
-    subtotal,
-    discount,
     total,
     payment: { method: "card", last4: number.slice(-4) },
     status: "pending",

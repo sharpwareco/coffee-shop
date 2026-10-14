@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCart, type CartItem } from "@/components/cart-context";
 import { formatPrice } from "@/lib/format";
-import { lineTotal, priceOrder } from "@/lib/pricing";
 import type { Product } from "@/types/domain";
 
 export function CartView({ products }: { products: Product[] }) {
@@ -14,7 +13,7 @@ export function CartView({ products }: { products: Product[] }) {
     .map((item) => ({ item, product: products.find((p) => p.id === item.productId) }))
     .filter((row): row is { item: CartItem; product: Product } => Boolean(row.product));
 
-  const { subtotal } = priceOrder(rows.map(({ item, product }) => ({ unitPrice: product.price, quantity: item.quantity })));
+  const total = rows.reduce((sum, row) => sum + row.product.price * row.item.quantity, 0);
 
   if (rows.length === 0) {
     return (
@@ -45,7 +44,7 @@ export function CartView({ products }: { products: Product[] }) {
                 <span>{item.quantity}</span>
                 <button type="button" onClick={() => setQuantity(product.id, item.quantity + 1)} aria-label="Increase quantity">+</button>
               </div>
-              <strong className="cart-line-total">{formatPrice(lineTotal({ unitPrice: product.price, quantity: item.quantity }))}</strong>
+              <strong className="cart-line-total">{formatPrice(product.price * item.quantity)}</strong>
               <button type="button" className="remove-btn" onClick={() => removeItem(product.id)}>Remove</button>
             </li>
           ))}
@@ -53,7 +52,7 @@ export function CartView({ products }: { products: Product[] }) {
         <aside className="cart-summary">
           <div className="cart-total">
             <span>Total</span>
-            <strong>{formatPrice(subtotal)}</strong>
+            <strong>{formatPrice(total)}</strong>
           </div>
           <Link href="/checkout" className="button button-block">Checkout</Link>
           <Link href="/" className="button-secondary button-block">Continue shopping</Link>

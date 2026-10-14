@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart, type CartItem } from "@/components/cart-context";
 import { formatPrice } from "@/lib/format";
-import { lineTotal, priceOrder } from "@/lib/pricing";
 import { formatExpiry } from "@/lib/expiry";
 import { errorMessage } from "@/lib/api-error";
 import type { Product } from "@/types/domain";
@@ -21,7 +20,7 @@ export function CheckoutForm({ products }: { products: Product[] }) {
     .map((item) => ({ item, product: products.find((p) => p.id === item.productId) }))
     .filter((row): row is { item: CartItem; product: Product } => Boolean(row.product));
 
-  const { total } = priceOrder(rows.map(({ item, product }) => ({ unitPrice: product.price, quantity: item.quantity })));
+  const total = rows.reduce((sum, row) => sum + row.product.price * row.item.quantity, 0);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -108,7 +107,7 @@ export function CheckoutForm({ products }: { products: Product[] }) {
             {rows.map(({ item, product }) => (
               <li key={product.id}>
                 <span>{product.name} × {item.quantity}</span>
-                <span>{formatPrice(lineTotal({ unitPrice: product.price, quantity: item.quantity }))}</span>
+                <span>{formatPrice(product.price * item.quantity)}</span>
               </li>
             ))}
           </ul>
