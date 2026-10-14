@@ -47,5 +47,9 @@ Runtime changes are intentionally NOT written back to JSON. Restarting the Next.
 - Card numbers, CVVs and expirations are never persisted; only the card's `last4` is stored on the order.
 - The admin session is a fixed HttpOnly cookie — the credential is hardcoded for the demo.
 
+## Dependency overrides
+- `postcss` is forced to `^8.5.23`; Next pins a vulnerable 8.4.31.
+- `@next/eslint-plugin-next`'s `fast-glob` is replaced by `tools/fast-glob-shim` (tinyglobby-backed, same results). It removes `braces` (GHSA-vfj7-8cjw-p6xm), which has no patched release. Delete the shim, the `fast-glob` devDependency and the override once Next drops `fast-glob@3.3.1` or `braces` ships a fix.
+
 ## Demo philosophy
 Simplicity is intentional. Prefer shallow folders, direct functions and the in-memory store over production architecture.
