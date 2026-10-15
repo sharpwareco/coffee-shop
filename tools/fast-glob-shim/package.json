@@ -1,0 +1,11 @@
+{
+  "name": "fast-glob",
+  "version": "3.3.1-tinyglobby-shim",
+  "private": true,
+  "description": "Drop-in for @next/eslint-plugin-next's fast-glob@3.3.1 usage, backed by tinyglobby. Removes braces (GHSA-vfj7-8cjw-p6xm, no patched release). Delete together with the override in the root package.json once upstream drops fast-glob or braces ships a fix.",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "tinyglobby": "^0.2.17"
+  }
+}
